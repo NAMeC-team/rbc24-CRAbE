@@ -26,8 +26,8 @@ pub struct FilterData {
     pub allies: TrackedRobotMap<AllyInfo>,
     /// Map associating a robot id to its data, for enemies only
     pub enemies: TrackedRobotMap<EnemyInfo>,
-    /// Data about the ball on the field
-    pub ball: TrackedBall,
+    /// Data about the ball on the field (if any)
+    pub ball: Option<TrackedBall>,
     /// Information on the field geometry
     pub geometry: CamGeometry,
     /// Game controller events

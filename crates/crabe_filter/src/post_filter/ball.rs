@@ -6,6 +6,9 @@ pub struct BallFilter;
 
 impl PostFilter for BallFilter {
     fn step(&mut self, filter_data: &FilterData, world: &mut World) {
-        world.ball = Some(filter_data.ball.data.clone());
+        let ball = filter_data.ball.as_ref().map(|ball| ball.data.clone());
+        if ball.is_some() {
+            world.ball = ball;
+        }
     }
 }
