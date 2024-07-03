@@ -39,7 +39,7 @@ impl Default for FilterData {
         FilterData {
             allies: Default::default(),
             enemies: Default::default(),
-            ball: Default::default(),
+            ball: None,
             geometry: Default::default(),
                 referee: vec![],
         }

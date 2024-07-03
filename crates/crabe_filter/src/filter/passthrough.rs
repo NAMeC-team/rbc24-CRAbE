@@ -40,7 +40,11 @@ impl Filter for PassthroughFilter {
     fn step(&mut self, filter_data: &mut FilterData, _world: &World) {
         robot_passthrough(filter_data.allies.iter_mut());
         robot_passthrough(filter_data.enemies.iter_mut());
-        let tracked_ball = filter_data.ball.get_or_insert(Default::default());
-        ball_passthrough(tracked_ball);
+        if filter_data.ball.is_none() {
+            filter_data.ball = None;
+        }else {
+            let tracked_ball = filter_data.ball.as_mut().unwrap();
+            ball_passthrough(tracked_ball);
+        }
     }
 }
