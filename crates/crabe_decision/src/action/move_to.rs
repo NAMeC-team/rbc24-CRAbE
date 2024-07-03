@@ -127,11 +127,20 @@ impl Action for MoveTo {
                 self.state = State::Done;
             }
 
-            let order = Vector3::new(
-                GOTO_SPEED * error_x_overshooted,
-                GOTO_SPEED * error_y_overshooted,
+            let order = 
+            if self.overshoot {
+                Vector3::new(
+                    GOTO_SPEED * error_x_overshooted,
+                    GOTO_SPEED * error_y_overshooted,
                 GOTO_ROTATION * error_orientation,
-            );
+                )
+            } else {
+                Vector3::new(
+                GOTO_SPEED * error_x,
+                GOTO_SPEED * error_y,
+                GOTO_ROTATION * error_orientation,
+                )
+            };
 
             Command {
                 forward_velocity: order.x as f32,
