@@ -22,15 +22,21 @@ fn robot_passthrough<'a, T: 'a + Default>(
     })
 }
 
-fn ball_passthrough(ball: &mut TrackedBall) {
-    let last_packet = ball.packets.drain().last();
+fn ball_passthrough(ball: &mut Option<TrackedBall>) {
+    let tracked_ball = match ball {
+        Some(ball) => ball,
+        None => return,
+    };
+    let last_packet = tracked_ball.packets.drain().last();
     if let Some(packet) = last_packet {
-        ball.data = Ball {
+        tracked_ball.data = Ball {
             position: packet.position,
             timestamp: packet.frame_info.t_capture,
             velocity: Default::default(),
             acceleration: Default::default(),
         }
+    }else{
+        *ball = None;
     }
 }
 
@@ -40,11 +46,7 @@ impl Filter for PassthroughFilter {
     fn step(&mut self, filter_data: &mut FilterData, _world: &World) {
         robot_passthrough(filter_data.allies.iter_mut());
         robot_passthrough(filter_data.enemies.iter_mut());
-        if filter_data.ball.is_none() {
-            filter_data.ball = None;
-        }else {
-            let tracked_ball = filter_data.ball.as_mut().unwrap();
-            ball_passthrough(tracked_ball);
-        }
+        ball_passthrough(&mut filter_data.ball);
+        println!("ball exist {:?}", filter_data.ball.is_some());
     }
 }
