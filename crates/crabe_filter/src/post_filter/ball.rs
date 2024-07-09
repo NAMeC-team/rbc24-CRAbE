@@ -9,6 +9,11 @@ impl PostFilter for BallFilter {
         let ball = filter_data.ball.as_ref().map(|ball| ball.data.clone());
         if ball.is_some() {
             world.ball = ball;
+        } 
+        else {
+            // only working correctly in real life
+            // in grSim simulation, the ball is flickering
+            world.ball = None;
         }
     }
 }

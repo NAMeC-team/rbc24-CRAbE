@@ -47,6 +47,5 @@ impl Filter for PassthroughFilter {
         robot_passthrough(filter_data.allies.iter_mut());
         robot_passthrough(filter_data.enemies.iter_mut());
         ball_passthrough(&mut filter_data.ball);
-        println!("ball exist {:?}", filter_data.ball.is_some());
     }
 }
