@@ -6,6 +6,7 @@ use crate::message::Message;
 use crate::message::MessageData;
 use crate::strategy::defensive::DefenseWall;
 use crate::strategy::offensive::Attacker;
+use crate::strategy::testing::Aligned;
 use crate::strategy::testing::GoLeft;
 use crate::strategy::testing::GoRight;
 use crate::strategy::defensive::{GoalKeeper, BotMarking, BotContesting};
@@ -101,17 +102,26 @@ impl BigBro {
                     self.move_bot_to_new_strategy(m.id, strategy);
                 }
                 Message::WantToBeAligned => {
-                    //find strategy index with name "Aligned"
-                    let strategy_index = self
-                        .strategies
-                        .iter()
-                        .position(|s| s.name() == "Aligned")
-                        .unwrap();
-                    self.move_bot_to_existing_strategy(m.id, strategy_index);
+                    if let Some(strategy_index) = self.get_index_strategy_with_name("Aligned"){
+                        self.move_bot_to_existing_strategy(m.id, strategy_index);
+                    }
+                    let strategy = Box::new(Aligned::new(vec![m.id]));
+                    self.move_bot_to_new_strategy(m.id, strategy);
                 }
                 _ => {}
             }
         });
+    }
+
+    /// Get the index of a strategy with a given name.
+    /// 
+    /// # Arguments
+    /// - `name`: The name of the strategy.
+    /// 
+    /// # Returns
+    /// The index of the strategy in the strategies list.
+    pub fn get_index_strategy_with_name(&self, name: &str) -> Option<usize> {
+        self.strategies.iter().position(|s| s.name() == name)
     }
 
     /// Get the robot current strategy.
@@ -129,6 +139,9 @@ impl BigBro {
     }
 
     pub fn attribute_defense_wall(&mut self, world: &World) -> Vec<u8> {
+        if let Some(defense_wall_strategy) = self.strategies.iter().find(|s| s.name() == "DefenseWall"){
+            return defense_wall_strategy.get_ids();
+        }
         let available_robots = filter_robots_not_in_ids(world.allies_bot.values().collect(), &vec![constants::KEEPER_ID]);
         let closest_available_robots = closest_bots_to_point(available_robots, world.geometry.ally_goal.line.center());
         let mut ids = vec![];
@@ -146,14 +159,23 @@ impl BigBro {
         ids
     }
 
+    pub fn attribute_marking_bots(&mut self, world: &World, allies_markers: Vec<&Robot<AllyInfo>>) {
+        let mut marked_bot = vec![get_enemy_keeper_id(world)];
+        for ally_attacking in allies_markers {
+            let closest_enemy_to_robot = closest_bots_to_point(world.enemies_bot.values().collect(), ally_attacking.pose.position);
+            let markable_enemies = filter_robots_not_in_ids(closest_enemy_to_robot, &marked_bot);
+            if markable_enemies.len() == 0 {
+                continue;
+            }
+            marked_bot.push(markable_enemies[0].id);
+            let strategy = Box::new(BotMarking::new(ally_attacking.id, markable_enemies[0].id));
+            self.move_bot_to_new_strategy(ally_attacking.id, strategy);
+        }
+    }
+
     pub fn attribute_strategies(&mut self, world: &World, ball: &Ball) {
         //get robots in the defense wall  strategy
-        let allies_in_defense_wall: Vec<u8> = if let Some(defense_wall_strategy) = self.strategies.iter().find(|s| s.name() == "DefenseWall"){
-            defense_wall_strategy.get_ids()
-        }else{
-            self.attribute_defense_wall(world)
-        };
-
+        let allies_in_defense_wall: Vec<u8> = self.attribute_defense_wall(world);
         let allies_defensor = vec![allies_in_defense_wall, vec![constants::KEEPER_ID]].concat();
 
         let closest_allies_to_ball = closest_bots_to_point(world.allies_bot.values().collect(), ball.position_2d());
@@ -180,19 +202,6 @@ impl BigBro {
         }
     }
 
-    pub fn attribute_marking_bots(&mut self, world: &World, allies_markers: Vec<&Robot<AllyInfo>>) {
-        let mut marked_bot = vec![];
-        for ally_attacking in allies_markers {
-            let closest_enemy_to_robot = closest_bots_to_point(world.enemies_bot.values().collect(), ally_attacking.pose.position);
-            let markable_enemies = filter_robots_not_in_ids(closest_enemy_to_robot, &marked_bot);
-            if markable_enemies.len() == 0 {
-                continue;
-            }
-            marked_bot.push(markable_enemies[0].id);
-            let strategy = Box::new(BotMarking::new(ally_attacking.id, markable_enemies[0].id));
-            self.move_bot_to_new_strategy(ally_attacking.id, strategy);
-        }
-    }
 }
 
 // fn team_possessing_ball(ball: &Ball, allies: &Robot<AllyInfo>, enemies: &Robot<EnemyInfo>) -> Team {
@@ -231,7 +240,6 @@ impl Manager for BigBro {
         tools_data: &mut ToolData,
         action_wrapper: &mut ActionWrapper,
     ) {
-        let enemy_keeper_id: u8 = get_enemy_keeper_id(world);
         if let Some(ball) = &world.ball{
             self.attribute_strategies(world, ball);
         }
