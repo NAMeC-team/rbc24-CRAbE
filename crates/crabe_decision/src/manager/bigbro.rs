@@ -35,47 +35,48 @@ impl BigBro {
             ],
         }
     }
-
     /// Moves a bot from its current strategy to an existing strategy.
     ///
     /// # Arguments
     /// - `bot_id`: The id of the bot to move.
     /// - `strategy_index`: The index of the strategy (in the strategies list) to move the bot to.
     pub fn move_bot_to_existing_strategy(&mut self, bot_id: u8, strategy_index: usize) {
-        let bot_current_strategy_index = self
-            .strategies
-            .iter()
-            .position(|s| s.get_ids().contains(&bot_id))
-            .unwrap();
         let mut new_strategy_ids = self.strategies[strategy_index].as_ref().get_ids();
         new_strategy_ids.push(bot_id);
         self.strategies[strategy_index].put_ids(new_strategy_ids);
+        if let Some(bot_current_strategy_index) = self
+            .strategies
+            .iter()
+            .position(|s| s.get_ids().contains(&bot_id)){
 
-        let mut current_strategy_ids = self.strategies[bot_current_strategy_index]
-            .as_ref()
-            .get_ids();
-        if current_strategy_ids.len() == 1 {
-            self.strategies.remove(bot_current_strategy_index);
-        } else {
-            current_strategy_ids.retain(|&id| id != bot_id);
-            self.strategies[bot_current_strategy_index].put_ids(current_strategy_ids);
+                let mut current_strategy_ids = self.strategies[bot_current_strategy_index]
+                    .as_ref()
+                    .get_ids();
+                if current_strategy_ids.len() == 1 {
+                    self.strategies.remove(bot_current_strategy_index);
+                } else {
+                    current_strategy_ids.retain(|&id| id != bot_id);
+                    self.strategies[bot_current_strategy_index].put_ids(current_strategy_ids);
+                }
         }
     }
 
     pub fn move_bot_to_new_strategy(&mut self, bot_id: u8, strategy: Box<dyn Strategy>) {
-        let current_strategy_index = self
+        if let Some(current_strategy_index) = self
             .strategies
             .iter()
-            .position(|s| s.get_ids().contains(&bot_id))
-            .unwrap();
-        let mut ids = self.strategies[current_strategy_index].as_ref().get_ids();
-        let index_of_bot_in_slot_ids = ids.iter().position(|x| x == &bot_id).unwrap();
-        ids.remove(index_of_bot_in_slot_ids);
-        if ids.len() == 0 {
-            //if the bot was the alone in this strategy, we can replace it
-            self.strategies[current_strategy_index] = strategy;
+            .position(|s| s.get_ids().contains(&bot_id)){
+                let mut ids = self.strategies[current_strategy_index].as_ref().get_ids();
+                let index_of_bot_in_slot_ids = ids.iter().position(|x| x == &bot_id).unwrap();
+                ids.remove(index_of_bot_in_slot_ids);
+                if ids.len() == 0 {
+                    //if the bot was the alone in this strategy, we can replace it
+                    self.strategies[current_strategy_index] = strategy;
+                } else {
+                    self.strategies[current_strategy_index].put_ids(ids);
+                    self.strategies.push(strategy);
+                }
         } else {
-            self.strategies[current_strategy_index].put_ids(ids);
             self.strategies.push(strategy);
         }
     }
