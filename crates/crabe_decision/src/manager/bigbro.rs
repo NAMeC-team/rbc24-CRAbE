@@ -4,6 +4,7 @@ use crate::action::ActionWrapper;
 use crate::manager::Manager;
 use crate::message::Message;
 use crate::message::MessageData;
+use crate::strategy::defensive::DefenseWall;
 use crate::strategy::offensive::Attacker;
 use crate::strategy::testing::GoLeft;
 use crate::strategy::testing::GoRight;
@@ -127,19 +128,37 @@ impl BigBro {
         None
     }
 
+    pub fn attribute_defense_wall(&mut self, world: &World) -> Vec<u8> {
+        let available_robots = filter_robots_not_in_ids(world.allies_bot.values().collect(), &vec![constants::KEEPER_ID]);
+        let closest_available_robots = closest_bots_to_point(available_robots, world.geometry.ally_goal.line.center());
+        let mut ids = vec![];
+        for robot in closest_available_robots {
+            ids.push(robot.id);
+            if ids.len() == 2 {
+                break;
+            }
+        }
+        if ids.len() == 0 {
+            return vec![];
+        }
+        let strategy = Box::new(DefenseWall::new(ids.clone()));
+        self.strategies.push(strategy);
+        ids
+    }
+
     pub fn attribute_strategies(&mut self, world: &World, ball: &Ball) {
         //get robots in the defense wall  strategy
         let allies_in_defense_wall: Vec<u8> = if let Some(defense_wall_strategy) = self.strategies.iter().find(|s| s.name() == "DefenseWall"){
             defense_wall_strategy.get_ids()
         }else{
-            vec![]
+            self.attribute_defense_wall(world)
         };
 
         let allies_defensor = vec![allies_in_defense_wall, vec![constants::KEEPER_ID]].concat();
 
         let closest_allies_to_ball = closest_bots_to_point(world.allies_bot.values().collect(), ball.position_2d());
-        let closest_attackers_allies_to_ball = filter_robots_not_in_ids(closest_allies_to_ball, &allies_defensor);
-        
+        let closest_attackers_allies_to_ball = filter_robots_not_in_ids(closest_allies_to_ball, &allies_defensor);        
+
         // if there's already an attacker, we check if we need to change it 
         if let Some(attacker_strategy) = self.strategies.iter().find(|s| s.name() == "Attacker"){
             let attacker_id = attacker_strategy.get_ids()[0];
