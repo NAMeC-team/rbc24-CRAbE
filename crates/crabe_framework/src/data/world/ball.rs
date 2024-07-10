@@ -18,6 +18,7 @@ pub struct Ball {
     pub acceleration: Vector3<f64>,
     /// The team color of the team that currently possesses the ball.
     pub possession: Option<TeamColor>,
+
 }
 
 impl Ball {
