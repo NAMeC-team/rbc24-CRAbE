@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use nalgebra::{Point2, Point3, Vector3};
 use serde::Serialize;
 
+use super::TeamColor;
+
 /// The `Ball` struct represents the ball in the SSL game.
 #[derive(Serialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -27,11 +29,13 @@ impl Ball {
 
 /// The `BallTouchInfo` struct represents the last touch of the ball by a robot.
 /// It contains the id of the robot that touched the ball, the timestamp of the touch and the position of the ball at the time of the touch.
-#[derive(Serialize, Default, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BallTouchInfo {
     /// The id of the robot that touched the ball.
     pub robot_id: u8,
+    /// The team color of the robot that touched the ball.
+    pub team_color: TeamColor,
     /// The timestamp of the touch.
     pub timestamp: DateTime<Utc>,
     /// The position of the ball at the time of the touch.
