@@ -1,28 +1,22 @@
 use std::f64::consts::PI;
-
-use crate::action::move_to::MoveTo;
-use crate::action::ActionWrapper;
+use crate::{action::ActionWrapper, strategy::actions::shoot};
 use crate::message::MessageData;
 use crate::strategy::Strategy;
-use crate::utils::ball_in_trajectory;
-use crabe_framework::data::output::Kick;
 use crabe_framework::data::tool::ToolData;
 use crabe_framework::data::world::World;
 use crabe_math::{shape::Line, vectors::{self, rotate_vector}};
 use nalgebra::Point2;
-
 /// The Attacker strategy is responsible for moving the robot to the ball and then try scoring a goal
 pub struct Attacker {
     /// The id of the robot to move.
     id: u8,
     messages: Vec<MessageData>,
-    state: ShooterState,
 }
 
 impl Attacker {
     /// Creates a new Attacker instance with the desired robot id.
     pub fn new(id: u8) -> Self {
-        Self { id, messages: vec![], state:ShooterState::PlaceForShoot}
+        Self { id, messages: vec![]}
     }
 
     fn get_open_shoot_window(&self, shoot_start_position: &Point2<f64>, world: &World) -> Vec<Line> {
@@ -50,12 +44,6 @@ impl Attacker {
         return availables_targets;
     }
 }
-enum ShooterState{
-    PlaceForShoot,
-    Shoot
-}
-
-const GO_BEHIND_BALL_DIST : f64 = 0.3;
 
 impl Strategy for Attacker {
 
@@ -103,14 +91,10 @@ impl Strategy for Attacker {
         let robot_direction = vectors::vector_from_angle(robot.pose.orientation);
         
         // Get the ball position, otherwise exit the function
-        let ball_position = match world.ball.clone() {
-            Some(ball) => ball.position.xy(),
+        let ball = match &world.ball {
+            Some(ball) => ball,
             None => return false,
         };
-        let robot_to_ball = ball_position - robot_position;
-        let dot_with_ball = robot_direction.normalize().dot(&robot_to_ball.normalize());
-        let dist_to_ball = robot_to_ball.norm();
-
 
         let availables_targets = self.get_open_shoot_window(&robot_position, world);
         for target in &availables_targets {
@@ -121,6 +105,7 @@ impl Strategy for Attacker {
             //need to pass the ball
             return false;
         }
+
         //grab longest target line norm
         let mut longest_target = &availables_targets[0];
         for target in &availables_targets {
@@ -132,43 +117,16 @@ impl Strategy for Attacker {
         // Set the target shoot position to the center of the goal
         let target_shooting_position: Point2<f64> = longest_target.center();
 
-        // Calculate the position behind the ball to prepare the shoot
-        let behind_ball_position = ball_position + (ball_position - target_shooting_position).normalize() * GO_BEHIND_BALL_DIST; 
-                
-        // Check if the shooting trajectory will score
-        let robot_shooting_trajectory = Line::new(robot_position, robot_position + robot_to_ball * 100.);
-        let shooting_trajectory_will_score = match robot_shooting_trajectory.intersection_segments(&world.geometry.enemy_goal.line) {
-            Ok(_) => true,
-            Err(_) => false,
-        };
-
-
-        // Check if the ball is in the way of the robot placement, in this case we need to dodge the ball (TODO) 
-        let ball_in_the_way = ball_in_trajectory(&world, self.id, behind_ball_position);
-        match self.state {
-            ShooterState::PlaceForShoot => {
-                action_wrapper.push(self.id, MoveTo::new(behind_ball_position, vectors::angle_to_point(robot_position, target_shooting_position), 0., false, None, true));
-                if shooting_trajectory_will_score 
-                    && dot_with_ball > 0.95 // The robot is correctly facing the ball
-                {
-                    self.state = ShooterState::Shoot;
-                }
-            },
-            ShooterState::Shoot => {
-                // If the robot is close enough to the ball, shoot
-                let kick: Option<Kick> = if dist_to_ball < (world.geometry.robot_radius + world.geometry.ball_radius + 0.002) { 
-                    Some(Kick::StraightKick {  power: 4. }) 
-                }else {None};
-                action_wrapper.push(self.id, MoveTo::new(ball_position, vectors::angle_to_point(robot_position,target_shooting_position), 1.,  true, kick, true));
-
-                // If the ball is in the way or the robot is too far from the ball, go back to the placement state
-                if dot_with_ball < 0.9 {
-                    self.state = ShooterState::PlaceForShoot;
-                }
-            }
-        };
 
         tools_data.annotations.add_point("robot_position".to_string(), target_shooting_position);
+
+
+        action_wrapper.push(self.id, shoot(
+            &robot,
+            &ball,
+            &target_shooting_position,
+            world,
+        ));
 
         false
     }
