@@ -15,8 +15,11 @@ use crate::utils::closest_bots_to_point;
 use crate::utils::constants;
 use crate::utils::get_enemy_keeper_id;
 use clap::builder::Str;
+use crabe_framework::data;
 use crabe_framework::data::tool::ToolData;
+use crabe_framework::data::world::TeamColor;
 use crabe_framework::data::world::{AllyInfo, Ball, EnemyInfo, Robot, World, Team};
+use nalgebra::Point2;
 
 /// The `BigBro` struct represents a decision manager that executes strategies BigBroly
 /// added to its list.
@@ -173,33 +176,49 @@ impl BigBro {
         }
     }
 
+    
+
     pub fn attribute_strategies(&mut self, world: &World, ball: &Ball) {
         //get robots in the defense wall  strategy
+        
         let allies_in_defense_wall: Vec<u8> = self.attribute_defense_wall(world);
         let allies_defensor = vec![allies_in_defense_wall, vec![constants::KEEPER_ID]].concat();
-
         let closest_allies_to_ball = closest_bots_to_point(world.allies_bot.values().collect(), ball.position_2d());
-        let closest_attackers_allies_to_ball = filter_robots_not_in_ids(closest_allies_to_ball, &allies_defensor);        
+        world.data.enemy
+        match ball.possesion {
+            Some(world.data.ally.color)=> {
+                
+                let closest_attackers_allies_to_ball = filter_robots_not_in_ids(closest_allies_to_ball, &allies_defensor);        
 
-        // if there's already an attacker, we check if we need to change it 
-        if let Some(attacker_strategy) = self.strategies.iter().find(|s| s.name() == "Attacker"){
-            let attacker_id = attacker_strategy.get_ids()[0];
-            if let Some(attacker_robot) = world.allies_bot.get(&attacker_id){
-                let attacker_dist_to_ball = attacker_robot.distance(&ball.position_2d());
-                if !(closest_attackers_allies_to_ball.len() > 0 && closest_attackers_allies_to_ball[0].id != attacker_id && attacker_dist_to_ball > 1.2) {
-                    let allies_markers = filter_robots_not_in_ids(closest_attackers_allies_to_ball, &vec![attacker_id]);
+                // if there's already an attacker, we check if we need to change it 
+                if let Some(attacker_strategy) = self.strategies.iter().find(|s| s.name() == "Attacker"){
+                    let attacker_id = attacker_strategy.get_ids()[0];
+                    if let Some(attacker_robot) = world.allies_bot.get(&attacker_id){
+                        let attacker_dist_to_ball = attacker_robot.distance(&ball.position_2d());
+                        if !(closest_attackers_allies_to_ball.len() > 0 && closest_attackers_allies_to_ball[0].id != attacker_id && attacker_dist_to_ball > 1.2) {
+                            let allies_markers = filter_robots_not_in_ids(closest_attackers_allies_to_ball, &vec![attacker_id]);
+                            self.attribute_marking_bots(world, allies_markers);
+                            return;
+                        }
+                    }
+                }
+                if closest_attackers_allies_to_ball.len() > 0 {
+                    let new_attacker_id = closest_attackers_allies_to_ball[0].id;
+                    let strategy = Box::new(Attacker::new(new_attacker_id));
+                    self.move_bot_to_new_strategy(new_attacker_id, strategy);
+                    let allies_markers = filter_robots_not_in_ids(closest_attackers_allies_to_ball, &vec![new_attacker_id]);
                     self.attribute_marking_bots(world, allies_markers);
-                    return;
                 }
             }
+            Some(world.data.enemy.color) => {
+                let robots_behind_ball = filter_robots_behind_point(closest_allies_to_ball, &ball.position_2d());
+                let ball_contestor = filter_robots_not_in_ids(robots_behind_ball, &vec![constants::KEEPER_ID]);
+            }
+            None => {
+                self.attribute_defense(world, ball, &allies_defensor);
+            }
         }
-        if closest_attackers_allies_to_ball.len() > 0 {
-            let new_attacker_id = closest_attackers_allies_to_ball[0].id;
-            let strategy = Box::new(Attacker::new(new_attacker_id));
-            self.move_bot_to_new_strategy(new_attacker_id, strategy);
-            let allies_markers = filter_robots_not_in_ids(closest_attackers_allies_to_ball, &vec![new_attacker_id]);
-            self.attribute_marking_bots(world, allies_markers);
-        }
+        
     }
 
 }
@@ -230,6 +249,18 @@ pub fn filter_robots_in_ids<'a, T>(robots: Vec<&'a Robot<T>>, ids: &Vec<u8>) -> 
 /// A list of robots that are not in the ids list.
 pub fn filter_robots_not_in_ids<'a, T>(robots: Vec<&'a Robot<T>>, ids: &Vec<u8>) -> Vec<&'a Robot<T>> {
     robots.into_iter().filter(|r| !ids.contains(&r.id)).collect()
+}
+
+/// Filter robots behind a point.
+/// 
+/// # Arguments
+/// - `robots`: The list of robots to filter.
+/// - `point`: The point to compare the robots' position to.
+/// 
+/// # Returns
+/// A list of robots that are behind the point.
+pub fn filter_robots_behind_point<'a, T>(robots: Vec<&'a Robot<T>>, point: &Point2<f64>) -> Vec<&'a Robot<T>> {
+    robots.into_iter().filter(|r| r.pose.position.x < point.x).collect()
 }
 
 impl Manager for BigBro {
