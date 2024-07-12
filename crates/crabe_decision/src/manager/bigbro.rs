@@ -176,8 +176,8 @@ impl BigBro {
         }
     }
 
-    pub fn attaque(&mut self, world: &World, ball: &Ball, allies_defensor: Vec<u8>, closest_allies_to_ball: Vec<&Robot<AllyInfo>>){
-        let closest_attackers_allies_to_ball = filter_robots_not_in_ids(closest_allies_to_ball, &allies_defensor);        
+    pub fn attaque(&mut self, world: &World, ball: &Ball, allies_defensor: &Vec<u8>, closest_allies_to_ball: &Vec<&Robot<AllyInfo>>){
+        let closest_attackers_allies_to_ball = filter_robots_not_in_ids(closest_allies_to_ball.clone(), &allies_defensor);        
 
         // if there's already an attacker, we check if we need to change it 
         if let Some(attacker_strategy) = self.strategies.iter().find(|s| s.name() == "Attacker"){
@@ -200,12 +200,32 @@ impl BigBro {
         }
     }
 
-    pub fn defense(&mut self, world: &World, ball: &Ball, allies_defensor: Vec<u8>, closest_allies_to_ball: Vec<&Robot<AllyInfo>>){
-        let robots_behind_ball = filter_robots_behind_point(closest_allies_to_ball, &ball.position_2d());
-        let ball_contestor = filter_robots_not_in_ids(robots_behind_ball, &vec![constants::KEEPER_ID]);
-        let contestor_id = ball_contestor[0].id;
+    pub fn defense(&mut self, world: &World, ball: &Ball, allies_defensor: &Vec<u8>, closest_allies_to_ball: &Vec<&Robot<AllyInfo>>){
+        
+        let closest_attackers_allies_to_ball = filter_robots_not_in_ids(closest_allies_to_ball.clone(), &allies_defensor);
+        
+        let robots_behind_ball = filter_robots_behind_point(closest_allies_to_ball.clone(), &ball.position_2d());
 
-        self.move_bot_to_new_strategy(contestor_id,Box::new(BotContesting::new(contestor_id)) );
+        let ball_contestor = filter_robots_not_in_ids(robots_behind_ball, &vec![constants::KEEPER_ID]);
+        if let Some(contester_strategy) = self.strategies.iter().find(|s| s.name() == "BotContesting"){
+            let contester_id = contester_strategy.get_ids()[0];
+            if let Some(contester_robot) = world.allies_bot.get(&contester_id){
+                let attacker_dist_to_ball = contester_robot.distance(&ball.position_2d());
+                if !(ball_contestor.len() > 0 && ball_contestor[0].id != contester_id && attacker_dist_to_ball > 1.2) {
+                    let allies_markers = filter_robots_not_in_ids(closest_attackers_allies_to_ball, &vec![contester_id]);
+                    self.attribute_marking_bots(world, allies_markers);
+                    return;
+                }
+            }
+        }
+        if ball_contestor.len() > 0 {
+            let contestor_id = ball_contestor[0].id;
+            let strategy = Box::new(BotContesting::new(contestor_id));
+            self.move_bot_to_new_strategy(contestor_id, strategy);
+            let allies_markers = filter_robots_not_in_ids(closest_attackers_allies_to_ball, &vec![contestor_id]);
+            self.attribute_marking_bots(world, allies_markers);
+        }
+
                 
     }
 
@@ -226,11 +246,11 @@ impl BigBro {
                     match _ally_color {
                         TeamColor::Blue => {
                             println!("Ally");
-                            self.attaque(world, ball, allies_defensor, closest_allies_to_ball)
+                            self.attaque(world, ball, &allies_defensor, &closest_allies_to_ball)
                         }
                         TeamColor::Yellow => {
                             println!("Enemy");
-                            self.defense(world, ball, allies_defensor, closest_allies_to_ball)
+                            self.defense(world, ball, &allies_defensor, &closest_allies_to_ball)
                         }
                     }
                 }
@@ -239,17 +259,17 @@ impl BigBro {
                         TeamColor::Blue => {
                             println!("Enemy");
 
-                            self.defense(world, ball, allies_defensor, closest_allies_to_ball)
+                            self.defense(world, ball, &allies_defensor, &closest_allies_to_ball)
                         }
                         TeamColor::Yellow => {
                             println!("Ally");
-                            self.attaque(world, ball, allies_defensor, closest_allies_to_ball)
+                            self.attaque(world, ball, &allies_defensor, &closest_allies_to_ball)
                         }
                     }
                 }
 
         } } else {
-            println!("None");
+            self.attaque(world, ball, &allies_defensor, &closest_allies_to_ball)
 
         }
         
@@ -282,7 +302,8 @@ pub fn filter_robots_in_ids<'a, T>(robots: Vec<&'a Robot<T>>, ids: &Vec<u8>) -> 
 /// # Returns
 /// A list of robots that are not in the ids list.
 pub fn filter_robots_not_in_ids<'a, T>(robots: Vec<&'a Robot<T>>, ids: &Vec<u8>) -> Vec<&'a Robot<T>> {
-    robots.into_iter().filter(|r| !ids.contains(&r.id)).collect()
+    let iter = robots.into_iter();
+    iter.filter(|r| !ids.contains(&r.id)).collect()
 }
 
 /// Filter robots behind a point.
