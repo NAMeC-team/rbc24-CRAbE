@@ -6,3 +6,6 @@ pub use self::prepare_goal_kick::PrepareGoalKick;
 
 mod prepare_free_kick;
 pub use self::prepare_free_kick::PrepareFreeKick;
+
+mod stop;
+pub use self::stop::Stop;
