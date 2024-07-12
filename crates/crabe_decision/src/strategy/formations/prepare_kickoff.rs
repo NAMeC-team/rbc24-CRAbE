@@ -77,7 +77,7 @@ impl Strategy for PrepareKickOff{
 
         if self.ally {
             action_wrapper.push(0, MoveTo::new(Point2::new(-1., 1.), vectors::angle_to_point(Point2::new(-1., 1.), ball_pos), 0.0, false, None, false));
-            action_wrapper.push(1, MoveTo::new(Point2::new(-0.0, 0.0), vectors::angle_to_point(Point2::new(-0.0, 0.0), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(1, MoveTo::new(Point2::new(-0.5, 0.0), vectors::angle_to_point(Point2::new(-0.5, 0.0), ball_pos), 0.0, false, None, false));
             action_wrapper.push(2, MoveTo::new(Point2::new(-1., -1.), vectors::angle_to_point(Point2::new(-1., -1.), ball_pos), 0.0, false, None, false));
             action_wrapper.push(3, MoveTo::new(Point2::new(-0.25, 2.5), vectors::angle_to_point(Point2::new(-0.25, 2.5), ball_pos), 0.0, false, None, false));
             action_wrapper.push(4, MoveTo::new(Point2::new(-0.25, -2.5), vectors::angle_to_point(Point2::new(-0.25, -2.5), ball_pos), 0.0, false, None, false));
@@ -86,11 +86,11 @@ impl Strategy for PrepareKickOff{
 
             let enemy_robots = world.enemies_bot.clone();
 
-            action_wrapper.push(0, MoveTo::new(Point2::new(-0.5, 1.), vectors::angle_to_point(Point2::new(-3., 0.5), ball_pos), 0.0, false, None, false));
-            action_wrapper.push(1, MoveTo::new(Point2::new(-0.6, 0.0), vectors::angle_to_point(Point2::new(-0.0, 0.0), ball_pos), 0.0, false, None, false));
-            action_wrapper.push(2, MoveTo::new(Point2::new(-0.5, -1.), vectors::angle_to_point(Point2::new(-3., -0.5), ball_pos), 0.0, false, None, false));
-            action_wrapper.push(3, MoveTo::new(Point2::new(-0.3, 1.5), vectors::angle_to_point(Point2::new(-0.25, 2.5), ball_pos), 0.0, false, None, false));
-            action_wrapper.push(4, MoveTo::new(Point2::new(-0.3, -1.5), vectors::angle_to_point(Point2::new(-0.25, -2.5), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(0, MoveTo::new(Point2::new(-0.5, 1.), vectors::angle_to_point(Point2::new(-0.5, 1.), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(1, MoveTo::new(Point2::new(-0.6, 0.0), vectors::angle_to_point(Point2::new(-0.6, 0.0), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(2, MoveTo::new(Point2::new(-0.5, -1.), vectors::angle_to_point(Point2::new(-0.5, -1.), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(3, MoveTo::new(Point2::new(-0.3, 1.5), vectors::angle_to_point(Point2::new(-0.3, 1.5), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(4, MoveTo::new(Point2::new(-0.3, -1.5), vectors::angle_to_point(Point2::new(-0.3, -1.5), ball_pos), 0.0, false, None, false));
         }
         false
     }

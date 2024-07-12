@@ -3,11 +3,12 @@ use crate::action::ActionWrapper;
 use crate::message::MessageData;
 use crate::strategy::Strategy;
 use crate::utils::closest_bot_to_point;
+use crate::utils::constants::{DEFENDER1_ID, DEFENDER2_ID};
 
 use crabe_framework::data::tool::ToolData;
 use crabe_framework::data::world::World;
 use crabe_math::vectors;
-use nalgebra::{Point2, Vector2};
+use nalgebra::Point2;
 
 /// The PrepareGoalKick struct represents a strategy that commands the team to set in the PrepareGoalKick formation
 #[derive(Default)]
@@ -78,11 +79,11 @@ impl Strategy for PrepareGoalKick{
         };
 
         if self.ally {
-            action_wrapper.push(0, MoveTo::new(Point2::new(-1., 2.), vectors::angle_to_point(Point2::new(-1., 1.), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(0, MoveTo::new(Point2::new(-1., 2.), vectors::angle_to_point(Point2::new(-1., 2.), ball_pos), 0.0, false, None, false));
             action_wrapper.push(1, MoveTo::new(Point2::new(-0.0, 0.0), vectors::angle_to_point(Point2::new(-0.0, 0.0), ball_pos), 0.0, false, None, false));
-            action_wrapper.push(2, MoveTo::new(Point2::new(-1., -2.), vectors::angle_to_point(Point2::new(-1., -1.), ball_pos), 0.0, false, None, false));
-            action_wrapper.push(3, MoveTo::new(Point2::new(-3., 2.5), vectors::angle_to_point(Point2::new(-0.25, 2.5), ball_pos), 0.0, false, None, false));
-            action_wrapper.push(4, MoveTo::new(Point2::new(-3., -2.5), vectors::angle_to_point(Point2::new(-0.25, -2.5), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(2, MoveTo::new(Point2::new(-1., -2.), vectors::angle_to_point(Point2::new(-1., -2.), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(3, MoveTo::new(Point2::new(-3., 2.5), vectors::angle_to_point(Point2::new(-3., 2.5), ball_pos), 0.0, false, None, false));
+            action_wrapper.push(4, MoveTo::new(Point2::new(-3., -2.5), vectors::angle_to_point(Point2::new(-3., -2.5), ball_pos), 0.0, false, None, false));
             action_wrapper.push(5, MoveTo::new(Point2::new(-4.0, 0.0), vectors::angle_to_point(Point2::new(-4.0, 0.0), ball_pos), 0.0, false, None, false));
             return false;
         } else {
@@ -93,18 +94,18 @@ impl Strategy for PrepareGoalKick{
                 let enemy_goal_pos = enemy_goal.pose.position;
                 let enemy_goal_angle = vectors::angle_to_point(enemy_goal_pos, ball_pos);
 
-                let ally_closest = closest_bot_to_point(world.allies_bot.values().collect(), ball_pos).unwrap();
 
-                let goal_facing_vector = Vector2::new(enemy_goal_pos.x - ball_pos.x, enemy_goal_pos.y - ball_pos.y);
+                let ally_closest = closest_bot_to_point(world.allies_bot.values().collect(), ball_pos);
 
-                let wall_pos = ball_pos + (-goal_facing_vector.normalize()) * 0.5;
-
-                if ally_closest.id != 0 && ally_closest.id != 2 {
-                    action_wrapper.push(ally_closest.id, MoveTo::new(wall_pos, vectors::angle_to_point(wall_pos, ball_pos), 0.0, false, None, false));
+                if let Some(ally_closest) = ally_closest {
+    
+                    if ally_closest.id != DEFENDER1_ID && ally_closest.id != DEFENDER2_ID {
+                        action_wrapper.push(ally_closest.id, MoveTo::new(Point2::new(ball_pos.x - 1., ball_pos.y), vectors::angle_to_point(Point2::new(ball_pos.x - 1., ball_pos.y), ball_pos), 0.0, false, None, false));
+                    }
+                    
+                    action_wrapper.push(DEFENDER1_ID, MoveTo::new(Point2::new(-3., 0.2), vectors::angle_to_point(Point2::new(-3., 0.2), ball_pos), 0.0, false, None, false));
+                    action_wrapper.push(DEFENDER2_ID, MoveTo::new(Point2::new(-3., -0.2), vectors::angle_to_point(Point2::new(-3., -0.2), ball_pos), 0.0, false, None, false));
                 }
-                
-                action_wrapper.push(0, MoveTo::new(Point2::new(-3., 0.2), vectors::angle_to_point(Point2::new(-3., 0.2), ball_pos), 0.0, false, None, false));
-                action_wrapper.push(2, MoveTo::new(Point2::new(-3., -0.2), vectors::angle_to_point(Point2::new(-3., -0.2), ball_pos), 0.0, false, None, false));
             }
 
         }

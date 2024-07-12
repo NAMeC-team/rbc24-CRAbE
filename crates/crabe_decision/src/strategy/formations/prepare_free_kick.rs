@@ -3,6 +3,8 @@ use crate::action::ActionWrapper;
 use crate::message::MessageData;
 use crate::strategy::Strategy;
 use crate::utils::closest_bots_to_point;
+use crate::utils::constants::{KEEPER_ID,DEFENDER1_ID,DEFENDER2_ID};
+use crate::strategy::defensive::DefenseWall;
 
 use crabe_framework::data::tool::ToolData;
 use crabe_framework::data::world::World;
@@ -64,6 +66,8 @@ impl Strategy for PrepareFreeKick{
         action_wrapper: &mut ActionWrapper,
     ) -> bool {
 
+        let SIZE_WALL = 3;
+
         for robot in self.ids.iter() {
             action_wrapper.clear(*robot);
         }
@@ -98,16 +102,17 @@ impl Strategy for PrepareFreeKick{
             }
 
         } else {
-            let closest_bots = closest_bots_to_point(world.enemies_bot.values().collect(), ball_pos);
+            let mut closest_bots = closest_bots_to_point(world.enemies_bot.values().collect(), ball_pos);
 
             if closest_bots.len() > 0 {
-                // put a wall in front of the ball with 3 last robots from the list
-                for i in (0..=2).rev() {
-                    if !(ball_pos.y - 1.0 + (i as f64 - 0.0) > 3.0 || ball_pos.y - 1.0 + (i as f64 - 0.0) < - 3.0) {
-                        let y_cord = ball_pos.y - 1.0 + (i as f64 - 0.0);
-                        action_wrapper.push(closest_bots[i].id, MoveTo::new(Point2::new(ball_pos.x - 1., y_cord), vectors::angle_to_point(Point2::new(ball_pos.x - 1., y_cord), ball_pos), 0.0, false, None, false));
-                    }
-                }
+                // remove keeper from the wall
+                closest_bots.retain(|&x| x.id != KEEPER_ID);
+                // take the SIZE_WALL closest bots to the ball
+                closest_bots.truncate(SIZE_WALL);
+
+                let closest_bots_ids = closest_bots.iter().map(|x| x.id).collect();
+                println!("closest bots ids: {:?}", closest_bots_ids);
+                DefenseWall::new(closest_bots_ids).step(world, tools_data, action_wrapper);
             }
         }
         false
