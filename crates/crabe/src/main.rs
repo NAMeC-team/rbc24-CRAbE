@@ -1,5 +1,6 @@
 use clap::Parser;
 use crabe_decision::pipeline::{DecisionConfig, DecisionPipeline};
+use crabe_decision::manual_pipeline::ManualDecisionPipeline;
 use crabe_filter::{FilterConfig, FilterPipeline};
 use crabe_framework::component::{
     Component, DecisionComponent, FilterComponent, GuardComponent, InputComponent, OutputComponent,
@@ -178,7 +179,7 @@ fn main() {
         .world(World::with_config(&cli.common))
         .input_component(InputPipeline::with_config(cli.input_config, &cli.common))
         .filter_component(FilterPipeline::with_config(cli.filter_config, &cli.common))
-        .decision_component(DecisionPipeline::with_config(
+        .decision_component(ManualDecisionPipeline::with_config(
             cli.decision_config,
             &cli.common,
         ))
