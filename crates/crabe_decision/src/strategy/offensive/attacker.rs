@@ -96,7 +96,7 @@ impl Strategy for Attacker {
             None => return false,
         };
 
-        let availables_targets = self.get_open_shoot_window(&robot_position, world);
+        let availables_targets = self.get_open_shoot_window(&ball.position_2d(), world);
         for target in &availables_targets {
             tools_data.annotations.add_line(target.start.to_string(), *target);
         }

@@ -7,6 +7,8 @@ use nalgebra::Point2;
 
 const GO_BEHIND_BALL_DIST: f64 = 0.3;
 
+/// Shoot the ball to the target_shooting_position
+/// (first he makes sure to be aligned with the enemy goal)
 pub fn shoot(
     robot: &Robot<AllyInfo>,
     ball: &Ball,
