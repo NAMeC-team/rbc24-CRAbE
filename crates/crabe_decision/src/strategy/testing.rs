@@ -10,3 +10,6 @@ mod go_right;
 pub use self::go_right::GoRight;
 mod aligned;
 pub use self::aligned::Aligned;
+
+mod pass_circle;
+pub use self::pass_circle::PassCircle;
