@@ -205,7 +205,7 @@ impl BigBro {
         let closest_attackers_allies_to_ball = filter_robots_not_in_ids(closest_allies_to_ball.clone(), &allies_defensor);
         
         let robots_behind_ball = filter_robots_behind_point(closest_allies_to_ball.clone(), &ball.position_2d());
-
+        // If there's already a contestor, we check if we need to change it
         let ball_contestor = filter_robots_not_in_ids(robots_behind_ball, &vec![constants::KEEPER_ID]);
         if let Some(contester_strategy) = self.strategies.iter().find(|s| s.name() == "BotContesting"){
             let contester_id = contester_strategy.get_ids()[0];
@@ -218,6 +218,7 @@ impl BigBro {
                 }
             }
         }
+        // Else Create it
         if ball_contestor.len() > 0 {
             let contestor_id = ball_contestor[0].id;
             let strategy = Box::new(BotContesting::new(contestor_id));
@@ -237,9 +238,6 @@ impl BigBro {
         let closest_allies_to_ball = closest_bots_to_point(world.allies_bot.values().collect(), ball.position_2d());
         let _ally_color = world.data.ally.color;
         let _enemy_color = world.data.enemy.color;
-        dbg!(ball.possession);
-        dbg!(_ally_color);
-        dbg!(_enemy_color);
         if let Some(possession) = ball.possession{
             match possession {
                 TeamColor::Blue => {
