@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 use crate::strategy::actions::{intercept, pass};
-use crate::utils::{get_first_angle_free_trajectory, navigation};
+use crate::utils::{get_first_angle_free_trajectory, navigation, object_in_bot_trajectory};
 use crate::{action::ActionWrapper, strategy::actions::shoot};
 use crate::message::{AttackerMessage, MessageData};
 use crate::strategy::Strategy;
@@ -22,45 +22,53 @@ impl Attacker {
     pub fn new(id: u8) -> Self {
         Self { id, messages: vec![]}
     }
+}
 
-    fn get_open_shoot_window(&self, shoot_start_position: &Point2<f64>, world: &World) -> Vec<Line> {
-        let mut availables_targets: Vec<Line> = vec![world.geometry.enemy_goal.line.clone()];
-
-        for enemy in world.enemies_bot.values() {
-            let robot_to_enemy = enemy.pose.position - shoot_start_position;
-            let perp = rotate_vector(robot_to_enemy.normalize(), PI/2.) * (world.geometry.robot_radius + world.geometry.ball_radius + 0.01);
-            let dir_left_side = (enemy.pose.position + perp) - shoot_start_position;
-            let dir_right_side = (enemy.pose.position - perp) - shoot_start_position;
-            let to_left_side_enemy = Line::new(*shoot_start_position, shoot_start_position + dir_left_side * 100.);
-            let to_right_side_enemy = Line::new(*shoot_start_position, shoot_start_position + dir_right_side * 100.);
-            let intersection_left = to_left_side_enemy.intersection_segment_line(&world.geometry.enemy_goal.line);
-            let intersection_right = to_right_side_enemy.intersection_segment_line(&world.geometry.enemy_goal.line);
-            if intersection_left.is_ok() && intersection_right.is_ok() {
-                // for each line ine availables_targets, cut off 
-                let mut new_targets: Vec<Line> = vec![];
-                for target_line in availables_targets {
-                    let targets = target_line.cut_off_segment(&Line::new( *intersection_left.as_ref().unwrap(), *intersection_right.as_ref().unwrap()));
-                    new_targets.extend(targets);
-                }
-                availables_targets = new_targets;
-            } else if intersection_left.is_ok() {
-                let mut new_targets: Vec<Line> = vec![];
-                for target_line in availables_targets {
-                    let targets = target_line.cut_off_segment(&Line::new( *intersection_left.as_ref().unwrap(), world.geometry.enemy_goal.line.end));
-                    new_targets.extend(targets);
-                }
-                availables_targets = new_targets;
-            } else if intersection_right.is_ok() {
-                let mut new_targets: Vec<Line> = vec![];
-                for target_line in availables_targets {
-                    let targets = target_line.cut_off_segment(&Line::new( world.geometry.enemy_goal.line.start, *intersection_right.as_ref().unwrap()));
-                    new_targets.extend(targets);
-                }
-                availables_targets = new_targets;
-            }
-        }
-        return availables_targets;
+fn shoot_windows_total_length(shoot_windows: &Vec<Line>) -> f64 {
+    let mut total_length = 0.;
+    for window in shoot_windows {
+        total_length += window.norm();
     }
+    return total_length;
+}
+
+fn get_open_shoot_window(shoot_start_position: &Point2<f64>, world: &World) -> Vec<Line> {
+    let mut availables_targets: Vec<Line> = vec![world.geometry.enemy_goal.line.clone()];
+
+    for enemy in world.enemies_bot.values() {
+        let robot_to_enemy = enemy.pose.position - shoot_start_position;
+        let perp = rotate_vector(robot_to_enemy.normalize(), PI/2.) * (world.geometry.robot_radius + world.geometry.ball_radius + 0.01);
+        let dir_left_side = (enemy.pose.position + perp) - shoot_start_position;
+        let dir_right_side = (enemy.pose.position - perp) - shoot_start_position;
+        let to_left_side_enemy = Line::new(*shoot_start_position, shoot_start_position + dir_left_side * 100.);
+        let to_right_side_enemy = Line::new(*shoot_start_position, shoot_start_position + dir_right_side * 100.);
+        let intersection_left = to_left_side_enemy.intersection_segment_line(&world.geometry.enemy_goal.line);
+        let intersection_right = to_right_side_enemy.intersection_segment_line(&world.geometry.enemy_goal.line);
+        if intersection_left.is_ok() && intersection_right.is_ok() {
+            // for each line ine availables_targets, cut off 
+            let mut new_targets: Vec<Line> = vec![];
+            for target_line in availables_targets {
+                let targets = target_line.cut_off_segment(&Line::new( *intersection_left.as_ref().unwrap(), *intersection_right.as_ref().unwrap()));
+                new_targets.extend(targets);
+            }
+            availables_targets = new_targets;
+        } else if intersection_left.is_ok() {
+            let mut new_targets: Vec<Line> = vec![];
+            for target_line in availables_targets {
+                let targets = target_line.cut_off_segment(&Line::new( *intersection_left.as_ref().unwrap(), world.geometry.enemy_goal.line.end));
+                new_targets.extend(targets);
+            }
+            availables_targets = new_targets;
+        } else if intersection_right.is_ok() {
+            let mut new_targets: Vec<Line> = vec![];
+            for target_line in availables_targets {
+                let targets = target_line.cut_off_segment(&Line::new( world.geometry.enemy_goal.line.start, *intersection_right.as_ref().unwrap()));
+                new_targets.extend(targets);
+            }
+            availables_targets = new_targets;
+        }
+    }
+    return availables_targets;
 }
 
 impl Strategy for Attacker {
@@ -127,7 +135,7 @@ impl Strategy for Attacker {
         }
 
 
-        let availables_targets = self.get_open_shoot_window(&ball.position_2d(), world);
+        let availables_targets = get_open_shoot_window(&ball.position_2d(), world);
         for target in &availables_targets {
             tools_data.annotations.add_line(target.start.to_string(), *target);
         }
@@ -156,16 +164,29 @@ impl Strategy for Attacker {
 
             //order them by closest to x position 
             let mut closest_ally = &allies_in_positive_x[0];
+            let mut max_window_length = 0.;
             let mut passing_trajectory = passing_trajectory_left;
             for ally in &allies_in_positive_x {
+                if object_in_bot_trajectory(world, self.id, ally.pose.position, false, false, true).len() > 0{
+                    continue;
+                }
+                let shoot_windows = get_open_shoot_window(&ally.pose.position, world);
+                let total_length = shoot_windows_total_length(&shoot_windows);
                 if let Ok(projection) = passing_trajectory_left.orthogonal_projection_point_on_segment(&ally.pose.position) {
-                    closest_ally = ally;
-                    passing_trajectory = passing_trajectory_left;
+                    if total_length > max_window_length {
+                        max_window_length = total_length;
+                        closest_ally = ally;
+                        passing_trajectory = passing_trajectory_left;
+                    }
                 } else if let Ok(projection) = passing_trajectory_right.orthogonal_projection_point_on_segment(&ally.pose.position) {
-                    closest_ally = ally;
-                    passing_trajectory = passing_trajectory_right;
+                    if total_length > max_window_length {
+                        max_window_length = total_length;
+                        closest_ally = ally;
+                        passing_trajectory = passing_trajectory_right;
+                    }
                 }
             }
+            passing_trajectory = Line::new(robot_position, robot_position+(closest_ally.pose.position - robot_position).normalize() * 100.);
             if ball.acceleration.norm() > 4.{
                 self.messages.push(MessageData::new(Message::AttackerMessage(AttackerMessage::BallPassed(closest_ally.id)), self.id));
             }else{

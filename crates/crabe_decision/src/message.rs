@@ -13,7 +13,6 @@ pub enum Message {
 pub enum AttackerMessage{
     WantToPassBallTo(u8, Line),
     NoNeedReceiver,
-    PassReceived(u8),
     BallPassed(u8),
 }
 

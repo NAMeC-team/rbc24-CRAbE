@@ -139,13 +139,6 @@ impl BigBro {
                                 self.strategies.remove(receiver_current_strategy_index);
                             }
                         }
-                        AttackerMessage::PassReceived(passer_id) => {
-                            if let Some(passer_current_strategy_index) = self.get_index_strategy_with_name("Attacker"){
-                                self.strategies.remove(passer_current_strategy_index);
-                            }
-                            let strategy = Box::new(Attacker::new(m.id));
-                            self.move_bot_to_new_strategy(m.id, strategy);
-                        }
                         AttackerMessage::BallPassed(receiver_id) => {
                             if let Some(receiver_current_strategy_index) = self.get_index_strategy_with_name("Receiver"){
                                 self.strategies.remove(receiver_current_strategy_index);
@@ -241,6 +234,23 @@ impl Manager for BigBro {
                 RunningState::Penalty(team) => println!("penalty for {:#?}", team),
                 RunningState::FreeKick(team) => println!("free kick for {:#?}", team),
                 RunningState::Run => println!("run"),
+            }
+        }
+        
+
+        if let Some(strategy_index) = self.get_index_strategy_with_name("Attacker") {
+            let id = self.strategies[strategy_index].get_ids()[0];
+            if let Some(robot) = &world.allies_bot.get(&id) {
+                if let Some(ball) = &world.ball{
+                    let distance_to_goal = robot.distance(&ball.position_2d());
+                    if distance_to_goal > 0.5 {
+                        if let Some(closest) = closest_bot_to_point(world.allies_bot.values().collect(), ball.position_2d()){
+                            self.strategies.remove(strategy_index);
+                            let strategy = Box::new(Attacker::new(closest.id));
+                            self.move_bot_to_new_strategy(closest.id, strategy);
+                        }
+                    }
+                }
             }
         }
 
