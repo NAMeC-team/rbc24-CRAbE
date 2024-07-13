@@ -1,9 +1,10 @@
 use std::f64::consts::PI;
+use crate::strategy::actions::pass;
 use crate::{action::ActionWrapper, strategy::actions::shoot};
 use crate::message::MessageData;
 use crate::strategy::Strategy;
 use crabe_framework::data::tool::ToolData;
-use crabe_framework::data::world::World;
+use crabe_framework::data::world::{AllyInfo, Robot, World};
 use crabe_math::{shape::Line, vectors::{self, rotate_vector}};
 use nalgebra::Point2;
 /// The Attacker strategy is responsible for moving the robot to the ball and then try scoring a goal
@@ -102,31 +103,49 @@ impl Strategy for Attacker {
         }
 
         if availables_targets.len() == 0 {
-            //need to pass the ball
-            return false;
-        }
-
-        //grab longest target line norm
-        let mut longest_target = &availables_targets[0];
-        for target in &availables_targets {
-            if target.norm() > longest_target.norm() {
-                longest_target = &target;
+            // grab allies in positive x except the attacker with filter
+            let allies_in_positive_x : Vec<&Robot<AllyInfo>> = world.allies_bot.values().filter(|ally| ally.pose.position.x > 0. && ally.id != self.id).collect();
+            if allies_in_positive_x.len() == 0 {
+                return false;
             }
+            //order them by closest to x position 
+            let mut closest_ally = &allies_in_positive_x[0];
+            for ally in &allies_in_positive_x {
+                if ally.pose.position.x < closest_ally.pose.position.x  {
+                    closest_ally = ally;
+                }
+            }
+
+            action_wrapper.push(self.id, pass(
+                &robot,
+                &closest_ally,
+                &ball,
+                world,
+            ));
+
+        }else{
+            //grab longest target line norm
+            let mut longest_target = &availables_targets[0];
+            for target in &availables_targets {
+                if target.norm() > longest_target.norm() {
+                    longest_target = &target;
+                }
+            }
+            
+            // Set the target shoot position to the center of the goal
+            let target_shooting_position: Point2<f64> = longest_target.center();
+
+
+            tools_data.annotations.add_point("robot_position".to_string(), target_shooting_position);
+
+
+            action_wrapper.push(self.id, shoot(
+                &robot,
+                &ball,
+                &target_shooting_position,
+                world,
+            ));
         }
-        
-        // Set the target shoot position to the center of the goal
-        let target_shooting_position: Point2<f64> = longest_target.center();
-
-
-        tools_data.annotations.add_point("robot_position".to_string(), target_shooting_position);
-
-
-        action_wrapper.push(self.id, shoot(
-            &robot,
-            &ball,
-            &target_shooting_position,
-            world,
-        ));
 
         false
     }
