@@ -60,7 +60,7 @@ const NUM_ROBOTS_RUNNING: u64 = 6;
 // specified in the embedded base station's code
 // If you only has "Operation timeouts" errors, try
 // resetting the board or replugging it
-const MAX_SERIAL_READ_TIMEOUT_MILLIS: u64 = NUM_ROBOTS_RUNNING * 100;
+const MAX_SERIAL_READ_TIMEOUT_MILLIS: u64 = NUM_ROBOTS_RUNNING * 500;
 
 impl Real {
     pub fn with_config(usb_config: RealConfig) -> Self {
