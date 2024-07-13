@@ -48,12 +48,19 @@ pub struct Real {
     usb: UsbTransceiver,
 }
 
+// Used to synchronize with runtime constant
+// timeout used on the base station's embedded code
+// to determine when to send empty or partial feedback data
+// Change this value according to the number of robots
+// running expected on the field during the match
+const NUM_ROBOTS_RUNNING: u64 = 6;
+
 // WARNING
 // this value MUST be slightly superior to the maximum timeout
 // specified in the embedded base station's code
 // If you only has "Operation timeouts" errors, try
 // resetting the board or replugging it
-const MAX_SERIAL_READ_TIMEOUT_MILLIS: u64 = 50;
+const MAX_SERIAL_READ_TIMEOUT_MILLIS: u64 = NUM_ROBOTS_RUNNING * 100;
 
 impl Real {
     pub fn with_config(usb_config: RealConfig) -> Self {
