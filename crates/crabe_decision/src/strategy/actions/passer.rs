@@ -20,7 +20,7 @@ pub fn pass(
     let dist_to_ball: f64 = robot_to_ball.norm();
 
     // Calculate the position behind the ball to prepare the pass
-    let behind_ball_position = ball_position + (ball_position - receiver.pose.position).normalize(); 
+    let behind_ball_position = ball_position + (ball_position - receiver.pose.position).normalize() * GO_BEHIND_BALL_DIST; 
             
     // Check if the pass trajectory will arrive near the ally
     let robot_passing_trajectory = Line::new(robot_position, robot_position + robot_to_ball * 100.);
@@ -31,6 +31,7 @@ pub fn pass(
         },
         Err(_) => false,
     };
+
 
     if passing_trajectory_will_land && dot_with_ball > 0.95{
         let kick: Option<Kick> = if dist_to_ball < (world.geometry.robot_radius + world.geometry.ball_radius + 0.002) { 
