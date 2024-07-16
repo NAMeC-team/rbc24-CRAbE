@@ -22,6 +22,7 @@ pub enum GameState {
     Halted(HaltedState),
     Stopped(StoppedState),
     Running(RunningState),
+    Simulator(SimulatonState),
 }
 
 #[derive(Serialize, Copy, Clone, Debug, Eq, PartialEq)]
@@ -118,6 +119,14 @@ pub enum RunningState {
     /// The team `TeamColor` can freely kick the ball once
     FreeKick(TeamColor),
 
+    /// Generic running command, when no special event has occurred
+    /// Can be issued manually
+    Run,
+}
+
+#[derive(Serialize, Copy, Clone, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum SimulatonState {
     /// Generic running command, when no special event has occurred
     /// Can be issued manually
     Run,

@@ -212,6 +212,9 @@ impl Manager for BigBro {
                 RunningState::FreeKick(team) => println!("free kick for {:#?}", team),
                 RunningState::Run => println!("run"),
             }
+            GameState::Simulator(running_simulation) => match running_simulation {
+                SimulatonState::Run => println!("running simulation"),
+            }
         }
         
         // mailbox to grab the messages
