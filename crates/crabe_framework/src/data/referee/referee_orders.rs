@@ -2,7 +2,7 @@ use nalgebra::Point2;
 use serde::Serialize;
 use crate::data::referee::event::GameEvent;
 use crate::data::referee::Referee;
-use crate::data::world::game_state::{GameState, SimulatonState, HaltedState};
+use crate::data::world::game_state::{GameState, HaltedState, NoGCState};
 
 /// Retains information sent by the game controller
 /// to both teams, about the current game state,
@@ -42,7 +42,7 @@ impl RefereeOrders {
             GameState::Halted(_) => MAX_SPEED_HALTED,
             GameState::Stopped(_) => MAX_SPEED_STOPPED,
             GameState::Running(_) => MAX_SPEED_RUNNING,
-            GameState::Simulator(_) => MAX_SPEED_RUNNING
+            GameState::NoGC(_) => MAX_SPEED_RUNNING
         }
     }
     
@@ -53,7 +53,7 @@ impl RefereeOrders {
             GameState::Halted(_) => None,
             GameState::Stopped(_) => Some(1.5),
             GameState::Running(_) => None,
-            GameState::Simulator(_) => None
+            GameState::NoGC(_) => None
         }
     }
 
@@ -98,7 +98,7 @@ impl Default for RefereeOrders {
             }
         } else {
             RefereeOrders {
-                state: GameState::Simulator(SimulatonState::Run),
+                state: GameState::NoGC(NoGCState::Run),
                 event: None,
                 speed_limit: MAX_SPEED_HALTED,
                 min_dist_from_ball: None,

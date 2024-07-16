@@ -22,7 +22,7 @@ pub enum GameState {
     Halted(HaltedState),
     Stopped(StoppedState),
     Running(RunningState),
-    Simulator(SimulatonState),
+    NoGC(NoGCState),
 }
 
 #[derive(Serialize, Copy, Clone, Debug, Eq, PartialEq)]
@@ -126,7 +126,7 @@ pub enum RunningState {
 
 #[derive(Serialize, Copy, Clone, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub enum SimulatonState {
+pub enum NoGCState {
     /// Generic running command, when no special event has occurred
     /// Can be issued manually
     Run,

@@ -324,8 +324,8 @@ impl Manager for BigBro {
                 RunningState::FreeKick(team) => println!("free kick for {:#?}", team),
                 RunningState::Run => println!("run"),
             }
-            GameState::Simulator(running_simulation) => match running_simulation {
-                SimulatonState::Run => println!("running simulation"),
+            GameState::NoGC(running_no_GC) => match running_no_GC {
+                NoGCState::Run => println!("running with no GC"),
             }
         }
         
