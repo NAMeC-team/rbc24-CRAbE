@@ -324,6 +324,9 @@ impl Manager for BigBro {
                 RunningState::FreeKick(team) => println!("free kick for {:#?}", team),
                 RunningState::Run => println!("run"),
             }
+            GameState::NoGC(running_no_GC) => match running_no_GC {
+                NoGCState::Run => println!("running with no GC"),
+            }
         }
         
         // mailbox to grab the messages
