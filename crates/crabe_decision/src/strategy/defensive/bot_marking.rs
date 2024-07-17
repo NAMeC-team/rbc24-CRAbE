@@ -9,8 +9,9 @@ use crabe_framework::data::{
 use nalgebra::{Matrix, Point2};
 
 use crabe_math::{shape::Line, vectors::angle_to_point};
+use crate::utils::closest_bot_to_point;
 
-
+const DISTANCE_FROM_ATTACKER:f64 = 0.5;
 /// The BotMarking struct represents a strategy that commands a robot to move in a BotMarking shape
 /// in a counter-clockwise. It is used for testing purposes.
 pub struct BotMarking {
@@ -63,6 +64,7 @@ impl Strategy for BotMarking {
                 return false;
             }
         };
+        let ball_pos = ball.position_2d();
 
         let robot = &match world.allies_bot.get(&self.id) {
             Some(r) => r,
@@ -80,8 +82,15 @@ impl Strategy for BotMarking {
         };
         let enemy_pos = &enemy.pose;
 
+        let our_attacker =  &match closest_bot_to_point(world.allies_bot.values().collect(), ball_pos){
+            Some(closest_ally) => closest_ally,
+            None => {
+                return false;
+            }
+        };
+
         let mut dribbler = 0.0;
-        let ball_pos = ball.position_2d();
+
         if robot.distance(&ball_pos) < 1. {
             dribbler = 1.0;
         }
@@ -101,7 +110,12 @@ impl Strategy for BotMarking {
             let enemy_ball_distance = enemy_to_ball.norm();
             let coef_distance_to_enemy: f64 = world.geometry.robot_radius + 0.2/enemy_ball_distance;
             let target = enemy_pos.position -  Point2::new(enemy_to_ball.x, enemy_to_ball.y)*(-coef_distance_to_enemy);
-            action_wrapper.push(self.id,  MoveTo::new(Point2::new(target.x, target.y), angle , dribbler , false , Some(StraightKick { power: 0.0 }), false ));
+            let mut target_point = Point2::new(target.x, target.y);
+
+            if our_attacker.distance(&target_point) < DISTANCE_FROM_ATTACKER + world.geometry.robot_radius {
+                target_point = target_point - (our_attacker.pose.position - target_point)*(-0.5 + world.geometry.robot_radius);
+            }
+            action_wrapper.push(self.id,  MoveTo::new(target_point, angle , dribbler , false , Some(StraightKick { power: 0.0 }), false ));
         }
 
         

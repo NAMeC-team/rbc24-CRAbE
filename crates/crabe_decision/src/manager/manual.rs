@@ -5,6 +5,7 @@ use crate::strategy::formations::MoveAwayFromBall;
 use crate::strategy::Strategy;
 use crabe_framework::data::tool::ToolData;
 use crabe_framework::data::world::World;
+use crate::strategy::defensive::BotMarking;
 
 /// The `Manual` struct represents a decision manager that executes strategies manually
 /// added to its list.
@@ -21,7 +22,7 @@ impl Manual {
     /// Creates a new `Manual` instance with the desired strategies to test.
     pub fn new() -> Self {
         Self {
-            strategies: vec![Box::new(Square::new(0))],
+            strategies: vec![Box::new(BotMarking::new(0,0))],
         }
     }
 }
