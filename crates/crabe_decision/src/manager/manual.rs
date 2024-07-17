@@ -3,6 +3,7 @@ use crate::manager::Manager;
 use crate::strategy::defensive::BotMarking;
 use crate::strategy::testing::{Square, TestVisionMoveTo};
 use crate::strategy::offensive::Demark;
+use crate::strategy::formations::MoveAwayFromBall;
 use crate::strategy::Strategy;
 use crabe_framework::data::tool::ToolData;
 use crabe_framework::data::world::World;
