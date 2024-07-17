@@ -26,8 +26,8 @@ pub struct FilterData {
     pub allies: TrackedRobotMap<AllyInfo>,
     /// Map associating a robot id to its data, for enemies only
     pub enemies: TrackedRobotMap<EnemyInfo>,
-    /// Data about the ball on the field
-    pub ball: TrackedBall,
+    /// Data about the ball on the field (if any)
+    pub ball: Option<TrackedBall>,
     /// Information on the field geometry
     pub geometry: CamGeometry,
     /// Game controller events
@@ -39,7 +39,7 @@ impl Default for FilterData {
         FilterData {
             allies: Default::default(),
             enemies: Default::default(),
-            ball: Default::default(),
+            ball: None,
             geometry: Default::default(),
                 referee: vec![],
         }

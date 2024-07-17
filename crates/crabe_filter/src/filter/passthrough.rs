@@ -22,10 +22,14 @@ fn robot_passthrough<'a, T: 'a + Default>(
     })
 }
 
-fn ball_passthrough(ball: &mut TrackedBall) {
-    let last_packet = ball.packets.drain().last();
+fn ball_passthrough(ball: &mut Option<TrackedBall>) {
+    let tracked_ball = match ball {
+        Some(ball) => ball,
+        None => return,
+    };
+    let last_packet = tracked_ball.packets.drain().last();
     if let Some(packet) = last_packet {
-        ball.data = Ball {
+        tracked_ball.data = Ball {
             position: packet.position,
             timestamp: packet.frame_info.t_capture,
             velocity: Default::default(),
@@ -33,6 +37,8 @@ fn ball_passthrough(ball: &mut TrackedBall) {
             possession: None,
             last_touch: None,
         }
+    }else{
+        *ball = None;
     }
 }
 

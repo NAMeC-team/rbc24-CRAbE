@@ -33,13 +33,15 @@ fn change_robots_side<T>(tracked_robots: &mut TrackedRobotMap<T>, robots: &Robot
     })
 }
 
-fn change_ball_side(tracked: &mut TrackedBall, ball: &Ball) {
-    if let Some(millis) = get_duration_millis(ball.timestamp, tracked.data.timestamp) {
-        if millis <= 0.0 {
-            return;
+fn change_ball_side(tracked: &mut Option<TrackedBall>, ball: &Ball) {
+    if let Some(tracked) = tracked {
+        if let Some(millis) = get_duration_millis(ball.timestamp, tracked.data.timestamp) {
+            if millis <= 0.0 {
+                return;
+            }
+            tracked.data.position.x = -tracked.data.position.x;
+            tracked.data.position.y = -tracked.data.position.y;
         }
-        tracked.data.position.x = -tracked.data.position.x;
-        tracked.data.position.y = -tracked.data.position.y;
     }
 }
 

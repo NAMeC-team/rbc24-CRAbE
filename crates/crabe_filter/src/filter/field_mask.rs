@@ -20,11 +20,29 @@ impl FieldMaskFilter {
             }
         });
     }
+
+    fn filter_ball_by_side(tracked_ball: &mut Option<TrackedBall>, field_side: &FieldMask) {
+        if let Some(tracked_ball_b) = tracked_ball {
+            match field_side {
+                FieldMask::Positive => {
+                    if tracked_ball_b.data.position.x.is_sign_negative() {
+                        *tracked_ball = None;
+                    }
+                }
+                FieldMask::Negative => {
+                    if tracked_ball_b.data.position.x.is_sign_positive() {
+                        *tracked_ball = None;
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl Filter for FieldMaskFilter {
     fn step(&mut self, filter_data: &mut FilterData, _world: &World) {
         Self::filter_robots_by_side(&mut filter_data.allies, &self.field_side);
         Self::filter_robots_by_side(&mut filter_data.enemies, &self.field_side);
+        Self::filter_ball_by_side(&mut filter_data.ball, &self.field_side);
     }
 }
