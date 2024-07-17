@@ -11,8 +11,6 @@ impl PostFilter for BallFilter {
             world.ball = ball;
         } 
         else {
-            // only working correctly in real life
-            // in grSim simulation, the ball is flickering
             world.ball = None;
         }
     }

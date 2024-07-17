@@ -70,14 +70,14 @@ impl<T: Default> Default for TrackedRobot<T> {
 pub struct TrackedBall {
     pub packets: ConstGenericRingBuffer<CamBall, PACKET_BUFFER_SIZE>,
     pub data: Ball,
-    pub last_update: Instant,
+    pub last_update: DateTime<Utc>,
 }
 
 impl Default for TrackedBall {
     fn default() -> Self {
         Self {
             packets: ConstGenericRingBuffer::new(),
-            last_update: Instant::now(),
+            last_update: Utc::now(),
             data: Default::default(),
         }
     }
