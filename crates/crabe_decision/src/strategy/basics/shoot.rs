@@ -1,3 +1,4 @@
+use std::time::Instant;
 use crate::action::move_to::MoveTo;
 use crabe_framework::data::output::Kick;
 use crabe_framework::data::world::{AllyInfo, Ball, Robot, World};
@@ -32,7 +33,7 @@ pub fn shoot(
     let dist_to_ball = robot_to_ball.norm();
 
     // Calculate the position behind the ball to prepare the shoot
-    let behind_ball_position = ball_position + (ball_position - target_shooting_position).normalize() * GO_BEHIND_BALL_DIST; 
+
             
     // Check if the shooting trajectory will score
     let robot_shooting_trajectory = Line::new(robot_position, robot_position + robot_to_ball * 100.);
@@ -41,11 +42,18 @@ pub fn shoot(
         Err(_) => false,
     };
 
+    let mut dribbler = if dist_to_ball < 1. {200.} else {0.};
+
     if shooting_trajectory_will_score && dot_with_ball > 0.95{
-        let kick: Option<Kick> = if dist_to_ball < (world.geometry.robot_radius + world.geometry.ball_radius + 0.002) { 
-            Some(Kick::StraightKick {  power: 4. }) 
-        }else {None};
+        let kick: Option<Kick> = if dist_to_ball < (world.geometry.robot_radius + world.geometry.ball_radius) {
+            dribbler = 0.;
+            Some(Kick::StraightKick {  power: 4. })
+        }else {
+            None
+        };
         return MoveTo::new(ball_position, vectors::angle_to_point(robot_position,*target_shooting_position), 1.,  true, kick, true);
     }
-    MoveTo::new(behind_ball_position, vectors::angle_to_point(robot_position, *target_shooting_position), 0., false, None, true)
+    let line_goal_ball = Line::new(*target_shooting_position,ball_position);
+    let correction_target = line_goal_ball.closest_point_on_line(&robot_position);
+    MoveTo::new(correction_target, vectors::angle_to_point(robot_position, *target_shooting_position), 1., false, None, true)
 }
