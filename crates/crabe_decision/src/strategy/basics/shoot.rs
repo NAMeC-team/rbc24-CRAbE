@@ -5,7 +5,7 @@ use crabe_math::shape::Line;
 use crabe_math::vectors;
 use nalgebra::Point2;
 
-const GO_BEHIND_BALL_DIST: f64 = 0.3;
+const GO_BEHIND_BALL_DIST: f64 = 0.24;
 
 /// Shoot the ball to the target_shooting_position inside the enemy goal
 /// (before kicking he makes sure to be aligned with the enemy goal)
@@ -41,7 +41,7 @@ pub fn shoot(
         Err(_) => false,
     };
 
-    if shooting_trajectory_will_score && dot_with_ball > 0.95{
+    if shooting_trajectory_will_score && dot_with_ball > 0.93{
         let kick: Option<Kick> = if dist_to_ball < (world.geometry.robot_radius + world.geometry.ball_radius + 0.002) { 
             Some(Kick::StraightKick {  power: 4. }) 
         }else {None};
