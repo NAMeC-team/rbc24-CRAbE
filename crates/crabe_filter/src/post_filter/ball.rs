@@ -10,6 +10,8 @@ const MIN_DISTANCE_DIFFERENCE_TO_SWITCH_POSSESSION: f64 = 0.1;
 const MAX_DISTANCE_DIFFERENCE_TO_SWITCH_POSSESSION: f64 = 0.3;
 const MAX_DIFFERENCE_VELOCITY_TO_SWITCH_POSSESSION: f64 = 0.1;
 const DOT_DIFFERENCE_TO_SWITCH_POSSESSION: f64 = 0.75;
+const DISTANCE_DIFFERENCE_TO_SWITCH:f64 = 1.;
+const MIN_VELOCITY_TO_SWITCH:f64 = 0.4;
 
 
 fn calculated_possession(ball: &mut Ball, world: &World) {
@@ -70,6 +72,17 @@ fn calculated_possession(ball: &mut Ball, world: &World) {
                 ball.possession = Some(enemy_color);
             }
         }
+    }
+
+    ///////////////
+    // CALCULATE POSSESSION BY DISTANCE DIFFERENCE
+    ///////////////
+
+    let distance_diff = ally_distance - enemy_distance;
+    if distance_diff > DISTANCE_DIFFERENCE_TO_SWITCH && ball.velocity.norm() < MIN_VELOCITY_TO_SWITCH{
+        ball.possession = Some(ally_color);
+    } else if distance_diff < -DISTANCE_DIFFERENCE_TO_SWITCH {
+        ball.possession = Some(enemy_color);
     }
     
 
