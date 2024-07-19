@@ -61,7 +61,7 @@ impl Strategy for PrepareKickOff {
             action_wrapper.clear(*id);
             if world.allies_bot.len() >= self.ids.len(){
                 let robot = &world.allies_bot[id];
-                if robot.pose.position.x > -0.1{
+                if robot.pose.position.x > -0.1 && robot.pose.position.x < 0.1{
                     action_wrapper.push(*id, comeback(
                         &world.allies_bot[id],
                         world,
