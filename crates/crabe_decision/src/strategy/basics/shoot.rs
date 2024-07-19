@@ -44,7 +44,7 @@ pub fn shoot(
 
     let mut dribbler = if dist_to_ball < 1. {200.} else {0.};
 
-    if shooting_trajectory_will_score && dot_with_ball > 0.95{
+    if shooting_trajectory_will_score && dot_with_ball > 0.75{
         let kick: Option<Kick> = if dist_to_ball < (world.geometry.robot_radius + world.geometry.ball_radius) {
             dribbler = 0.;
             Some(Kick::StraightKick {  power: 4. })
@@ -53,7 +53,16 @@ pub fn shoot(
         };
         return MoveTo::new(ball_position, vectors::angle_to_point(robot_position,*target_shooting_position), dribbler,  true, kick, true);
     }
+
+    let goal_to_ball = target_shooting_position - ball_position;
+    let robot_to_ball = robot_position - ball_position;
+
     let line_goal_ball = Line::new(*target_shooting_position,ball_position);
-    let correction_target = line_goal_ball.closest_point_on_line(&robot_position);
+    let mut correction_target = line_goal_ball.closest_point_on_line(&robot_position);
+
+    if dot_with_ball < 0.5 || goal_to_ball.normalize().dot(&robot_to_ball.normalize()) > 0. {
+        correction_target = ball_position + (ball_position - target_shooting_position).normalize() * GO_BEHIND_BALL_DIST
+    }
+
     MoveTo::new(correction_target, vectors::angle_to_point(robot_position, *target_shooting_position), dribbler, false, None, true)
 }
