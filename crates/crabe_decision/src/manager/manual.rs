@@ -1,5 +1,7 @@
 use crate::action::ActionWrapper;
 use crate::manager::Manager;
+use crate::strategy::defensive::DefenseWall;
+use crate::strategy::offensive::Attacker;
 use crate::strategy::testing::{Square, TestVisionMoveTo};
 use crate::strategy::formations::MoveAwayFromBall;
 use crate::strategy::Strategy;
@@ -21,7 +23,7 @@ impl Manual {
     /// Creates a new `Manual` instance with the desired strategies to test.
     pub fn new() -> Self {
         Self {
-            strategies: vec![Box::new(Square::new(0))],
+            strategies: vec![Box::new(Attacker::new(5)), Box::new(DefenseWall::new(vec![]))],
         }
     }
 }
