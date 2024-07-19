@@ -203,6 +203,10 @@ pub fn get_first_angle_free_trajectory_from_side(objects:&Vec<Circle>, segment_w
         let objects_on_trajectory_1 = front_objects_in_trajectory(&trajectory_1, &objects, segment_width);
         let objects_on_trajectory_2= front_objects_in_trajectory(&trajectory_2, &objects, segment_width);
 
+        for c in objects {
+            tools_data.annotations.add_circle(c.center.to_string(),c.clone());
+        }
+
 
         let intersect = trajectory_1.intersection_lines(&trajectory_2).unwrap_or_else(|e| Point2::new(10., 10.));
         let field = Rectangle::new(world.geometry.field.length,world.geometry.field.width,Point2::new(-world.geometry.field.length/2.,-world.geometry.field.width/2.));
@@ -211,6 +215,8 @@ pub fn get_first_angle_free_trajectory_from_side(objects:&Vec<Circle>, segment_w
 
             free = true;
             new_target = intersect;
+            tools_data.annotations.add_line(trajectory_1.start.to_string() + positive_rotation.to_string().as_str(), trajectory_1);
+            tools_data.annotations.add_line(trajectory_2.start.to_string() + positive_rotation.to_string().as_str(), trajectory_2);
 
 
         } else {

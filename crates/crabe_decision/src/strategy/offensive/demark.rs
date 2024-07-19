@@ -15,7 +15,7 @@ use crate::utils::navigation::get_first_angle_free_trajectory;
 
 use crabe_math::shape::{Circle, Line};
 
-const MIN_DISTANCE_TO_ROBOT_ENEMY: f64 = 0.025;
+const MIN_DISTANCE_TO_ROBOT_ENEMY: f64 = 0.05;
 const EXPLORATION_ANGLE: f64 = 0.01;
 
 /// The Demark struct represents a strategy that commands a robot to move in a Demark shape
@@ -67,7 +67,8 @@ impl Demark {
         }
 
         if !target.2 {
-            target.1 = ball_handler_pos.position - ( ball_handler_pos.position - world.geometry.ally_goal.line.center()).normalize() * 0.5;
+            let sign = if *side { 1. } else {-1.};
+            target.1 = ball_handler_pos.position - vectors::rotate_vector(( ball_handler_pos.position - world.geometry.ally_goal.line.center()).normalize(),sign*PI/5.) * 0.5;
         }
 
         if target.0 == 0.0 && robot.distance(&target.1) < 0.1{
