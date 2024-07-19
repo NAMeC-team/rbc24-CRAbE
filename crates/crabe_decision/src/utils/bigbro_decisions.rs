@@ -35,15 +35,21 @@ pub fn everyone_stop(bigbro: &mut BigBro, world: &World) {
 /// Prepare start
 pub fn prepare_start(bigbro: &mut BigBro, world: &World) {
     let mut ids = vec![];
+    let mut bots = vec![];
     for bot in world.allies_bot.values() {
-        ids.push(bot.id);
+        if bot.id != KEEPER_ID{
+            ids.push(bot.id);
+            bots.push(bot);
+       }
     }
-    if let Some(strategy_index) = bigbro.get_index_strategy_with_name("PrepareStart") {
-        bigbro.move_bots_to_existing_strategy(ids, strategy_index);
-    }else{
-        let strategy = Box::new(PrepareStart::new(vec![]));
-        bigbro.move_bots_to_new_strategy(ids, strategy);
-    }
+    put_goal(bigbro);
+    put_defense_wall(bigbro, world, &bots, bots.len());
+    //if let Some(strategy_index) = bigbro.get_index_strategy_with_name("PrepareStart") {
+      //  bigbro.move_bots_to_existing_strategy(ids, strategy_index);
+    //}else{
+       // let strategy = Box::new(PrepareStart::new(vec![]));
+     //   bigbro.move_bots_to_new_strategy(ids, strategy);
+    //}
 }
 
 /// Put all bots to the Halt strategy.
