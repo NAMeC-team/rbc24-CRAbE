@@ -359,6 +359,7 @@ impl Manager for BigBro {
                 RunningState::Run => run_state(self, world, tools_data),
             }
         }
+        prepare_start(self, world);
         
         // mailbox to grab the messages
         // (we can't iter the strategies and modify them at the same time so we need to collect the messages first and then process them)
