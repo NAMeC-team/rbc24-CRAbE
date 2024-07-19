@@ -51,9 +51,9 @@ pub fn shoot(
         }else {
             None
         };
-        return MoveTo::new(ball_position, vectors::angle_to_point(robot_position,*target_shooting_position), 1.,  true, kick, true);
+        return MoveTo::new(ball_position, vectors::angle_to_point(robot_position,*target_shooting_position), dribbler,  true, kick, true);
     }
     let line_goal_ball = Line::new(*target_shooting_position,ball_position);
     let correction_target = line_goal_ball.closest_point_on_line(&robot_position);
-    MoveTo::new(correction_target, vectors::angle_to_point(robot_position, *target_shooting_position), 1., false, None, true)
+    MoveTo::new(correction_target, vectors::angle_to_point(robot_position, *target_shooting_position), dribbler, false, None, true)
 }
