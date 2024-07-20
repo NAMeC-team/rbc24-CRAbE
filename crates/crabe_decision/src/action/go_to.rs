@@ -106,7 +106,7 @@ impl Action for GoTo {
             if id != KEEPER_ID{
                 self.target = penalty_zone_prevention(&robot.pose.position, &self.target, world)
             }
-            self.target = obstacle_avoidance(&self.target, robot, world, _tools);
+            self.target = obstacle_avoidance(&self.target, robot, world, _tools, &vec![]);
             let ti = frame_inv(robot_frame(robot));
             let target_in_robot = ti * Point2::new(self.target.x, self.target.y);
             

@@ -32,11 +32,11 @@ const PENALTY_AVOIDANCE_OVERSHOOT_DIST : f64 = 0.6;
 /// 
 /// # Returns
 /// The new point to move to
-pub fn obstacle_avoidance(target: &Point2<f64>, robot: &Robot<AllyInfo>, world: &World, _tools: &mut ToolData) -> Point2<f64>{
+pub fn obstacle_avoidance(target: &Point2<f64>, robot: &Robot<AllyInfo>, world: &World, _tools: &mut ToolData, allies_id_no_avoidance: &Vec<u8>) -> Point2<f64>{
     if robot.distance(target) <= NO_AVOIDANCE_DIST {
         return target.clone();
     }
-    let allies_bot_without_actual_robot = world.allies_bot.values().filter(|r: &&Robot<AllyInfo>| r.id != robot.id).collect();
+    let allies_bot_without_actual_robot = world.allies_bot.values().filter(|r: &&Robot<AllyInfo>| r.id != robot.id && !allies_id_no_avoidance.contains(&r.id)).collect();
     let allies_objects = robots_to_circles(world, allies_bot_without_actual_robot);
     let enemies_objects = robots_to_circles(world, world.enemies_bot.values().collect());
     let mut objects = [&allies_objects[..], &enemies_objects[..]].concat();
