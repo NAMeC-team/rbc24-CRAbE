@@ -8,3 +8,5 @@ mod prepare_start;
 pub use self::prepare_start::PrepareStart;
 mod latteral_attack;
 pub use self::latteral_attack::LateralAttack;
+mod move_away_ball_placement;
+pub use self::move_away_ball_placement::MoveAwayBallPlacement;

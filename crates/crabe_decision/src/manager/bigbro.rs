@@ -8,6 +8,7 @@ use crate::strategy::offensive::Attacker;
 use crate::strategy::offensive::Receiver;
 use crate::strategy::testing::{Aligned, GoLeft, GoRight};
 use crate::strategy::Strategy;
+use crate::utils::ball_placement_state;
 use crate::utils::everyone_halt;
 use crate::utils::everyone_stop;
 use crate::utils::everyone_stop_except_keeper;
@@ -337,7 +338,7 @@ impl Manager for BigBro {
                         everyone_stop(self, world);
                     }
                 }
-                StoppedState::BallPlacement(_team) =>  everyone_stop(self, world),
+                StoppedState::BallPlacement(_team) => ball_placement_state(self, world),
                 StoppedState::PrepareForGameStart => prepare_start(self, world),
                 StoppedState::BallLeftFieldTouchLine(_) => everyone_halt(self, world),
                 StoppedState::CornerKick(team) => if team == world.team_color{
