@@ -1,6 +1,6 @@
-use crabe_framework::data::{tool::ToolData, world::{AllyInfo, Ball, Robot, TeamColor, World}};
+use crabe_framework::data::{tool::ToolData, world::{AllyInfo, Ball, EnemyInfo, Robot, TeamColor, World}};
 
-use crate::{manager::bigbro::BigBro, strategy::{self, defensive::{DefenseWall, GoalKeeper}, formations::{Halt, MoveAwayFromBall, PrepareKickOff, PrepareStart}, offensive::Attacker}};
+use crate::{manager::bigbro::BigBro, strategy::{self, defensive::{BotMarking, DefenseWall, GoalKeeper}, formations::{Halt, LateralAttack, MoveAwayFromBall, PrepareKickOff, PrepareStart}, offensive::Attacker}};
 
 use super::{closest_bot_to_point, closest_bots_to_point, filter_robots_not_in_ids, get_enemy_keeper_id, KEEPER_ID};
 
@@ -134,6 +134,41 @@ fn put_defense_wall(bigbro: &mut BigBro, world: &World, robots: &Vec<&Robot<Ally
 }
 
 /// Put the closest bot to the ball to the Attacker strategy. (if there is already an attacker and he's close to the ball, don't change)
+fn put_marker(bigbro: &mut BigBro, world: &World, bots: &Vec<&Robot<AllyInfo>>, ball: &Ball, attacker_id: u8) -> u8 {
+    let enemies = closest_bots_to_point(world.enemies_bot.values().collect(), ball.position_2d());
+    let enemies_in_our_zone: Vec<&Robot<EnemyInfo>> = enemies.iter().filter(|bot| bot.pose.position.x <= 0.).map(|bot| *bot).collect();
+    if enemies_in_our_zone.len()>=2{
+        let enemy = enemies_in_our_zone[1];
+        let allies_no_attacker = filter_robots_not_in_ids(bots.iter().map(|bot| *bot).collect(), &vec![attacker_id]);
+        let closest_bot = match closest_bot_to_point(allies_no_attacker, enemy.pose.position) {
+            Some(bot) => bot,
+            None => return 7,
+        };
+        let strategy = Box::new(BotMarking::new(closest_bot.id, enemy.id));
+        bigbro.move_bot_to_new_strategy(closest_bot.id, strategy);
+        return closest_bot.id;
+    }
+    return 7;
+}
+    
+
+/// Put the closest bot to the ball to the Attacker strategy. (if there is already an attacker and he's close to the ball, don't change)
+fn put_demarker(bigbro: &mut BigBro, world: &World, bots: &Vec<&Robot<AllyInfo>>, ball: &Ball, attacker_id: u8) -> u8 {
+    let closest_bot = match closest_bot_to_point(bots.iter().map(|bot| *bot).collect(), world.geometry.enemy_goal.line.center()) {
+        Some(bot) => bot,
+        None => return 7,
+    };
+    if let Some(_) = bigbro.get_index_strategy_with_name("Receiver"){
+        return 7;
+    }
+    if ball.velocity.norm() > 0.04 {
+        return 7;
+    }
+    let strategy = Box::new(LateralAttack::new(closest_bot.id, attacker_id));
+    bigbro.move_bot_to_new_strategy(closest_bot.id, strategy);
+    return closest_bot.id;
+}
+/// Put the closest bot to the ball to the Attacker strategy. (if there is already an attacker and he's close to the ball, don't change)
 fn put_attacker(bigbro: &mut BigBro, world: &World, bots: &Vec<&Robot<AllyInfo>>, ball: &Ball) -> u8 {
     let closest_bot = match closest_bot_to_point(bots.iter().map(|bot| *bot).collect(), ball.position_2d()) {
         Some(bot) => bot,
@@ -167,9 +202,35 @@ fn run_state_line_robots(bigbro: &mut BigBro, allies: Vec<&Robot<AllyInfo>>, bal
     if world.geometry.ally_penalty.is_inside(&ball.position_2d()){
         let defense_wall_ids = put_defense_wall(bigbro, world, &allies, allies.len());
     }else{
-        let defense_wall_ids = put_defense_wall(bigbro, world, &allies, allies.len() -1);
-        let offensive_line: Vec<&Robot<AllyInfo>> = allies.iter().filter(|bot| !defense_wall_ids.contains(&bot.id)).map(|bot| *bot).collect();
-        put_attacker(bigbro, world, &offensive_line, ball);
+        if ball.position.x > 0.{
+            if allies.len() >= 5{
+                let defense_wall_ids = put_defense_wall(bigbro, world, &allies, allies.len());
+                // let offensive_line: Vec<&Robot<AllyInfo>> = allies.iter().filter(|bot| !defense_wall_ids.contains(&bot.id)).map(|bot| *bot).collect();
+                let attacker_id = put_attacker(bigbro, world, &allies, ball);
+                let allies_id : Vec<u8> = allies.iter().map(|bot| bot.id).collect();
+                let demarkers: Vec<&Robot<AllyInfo>> = allies.iter().filter(|bot| bot.id != KEEPER_ID && bot.id != attacker_id).map(|bot| *bot).collect();
+                println!("demarker: {:?}", allies_id);
+                put_demarker(bigbro, world, &demarkers, ball, attacker_id);
+            }else{
+                let defense_wall_ids = put_defense_wall(bigbro, world, &allies, allies.len() - 1);
+                let offensive_line: Vec<&Robot<AllyInfo>> = allies.iter().filter(|bot| !defense_wall_ids.contains(&bot.id)).map(|bot| *bot).collect();
+                put_attacker(bigbro, world, &offensive_line, ball);
+            }
+        }else{
+            if allies.len() >= 5{
+                let defense_wall_ids = put_defense_wall(bigbro, world, &allies, allies.len());
+                // let offensive_line: Vec<&Robot<AllyInfo>> = allies.iter().filter(|bot| !defense_wall_ids.contains(&bot.id)).map(|bot| *bot).collect();
+                let attacker_id = put_attacker(bigbro, world, &allies, ball);
+                let allies_id : Vec<u8> = allies.iter().map(|bot| bot.id).collect();
+
+                let demarkers: Vec<&Robot<AllyInfo>> = allies.iter().filter(|bot|  bot.id != KEEPER_ID && bot.id != attacker_id).map(|bot| *bot).collect();
+                put_marker(bigbro, world, &demarkers, ball, attacker_id);
+            }else{
+                let defense_wall_ids = put_defense_wall(bigbro, world, &allies, allies.len() - 1);
+                let offensive_line: Vec<&Robot<AllyInfo>> = allies.iter().filter(|bot| !defense_wall_ids.contains(&bot.id)).map(|bot| *bot).collect();
+                put_attacker(bigbro, world, &offensive_line, ball);
+            }
+        }
     }
 }
 
