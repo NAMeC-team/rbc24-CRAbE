@@ -137,16 +137,9 @@ impl Strategy for GoalKeeper {
                     }else{None};
                     action_wrapper.push(robot.id, MoveTo::new(ball_position, vectors::angle_to_point(robot.pose.position, ball_position), 0.0, true, kick, false, false));
                     return false;
-                }
-                for receiver in closests_receivers.iter(){
-                    if object_in_bot_trajectory(world, self.id, receiver.pose.position, false, false, true).len() == 0{
-                        let pass_action = pass(robot, receiver, ball, world);
-                        action_wrapper.push(self.id, pass_action);
-                        return false;
-                    } else {
-                        action_wrapper.push(robot.id, MoveTo::new(ball_position, vectors::angle_to_point(robot.pose.position, ball_position), 0.0, true, Some(Kick::StraightKick { power: 4. }), false, false));
-                        return false;
-                    }
+                }else {
+                    action_wrapper.push(robot.id, MoveTo::new(ball_position, vectors::angle_to_point(robot.pose.position, ball_position), 0.0, true, Some(Kick::StraightKick { power: 4. }), false, false));
+                    return false;
                 }
             } else if let Some(closest_enemy) = closest_bot_to_point(world.enemies_bot.values().collect(), ball_position){
                 if let Some(intersection) = self.follow_enemy_to_ball_trajectory(ball, world, closest_enemy){
@@ -171,7 +164,7 @@ impl Strategy for GoalKeeper {
         }
 
         // Move the robot to the calculated position and orientation
-        action_wrapper.push(self.id, MoveTo::new(position_target, orientation, 0., false, None, false, false));
+        action_wrapper.push(self.id, MoveTo::new(position_target, orientation, 0., false, None, true, false));
         false
     }
 
