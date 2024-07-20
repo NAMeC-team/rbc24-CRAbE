@@ -7,6 +7,7 @@ use crate::data::referee::event::{BallLeftField, Event, GameEvent, GameEventType
 use crate::data::state_handler::{GameStateBranch, GameStateData};
 use crate::data::world::game_state::{GameState, HaltedState, RunningState, StoppedState};
 use crate::data::world::{Ball, Team, TeamColor, World};
+use crate::data::world::game_state::RunningState::Run;
 
 /// Checks whether the ball moved from its designated position
 /// It is based on the designated position sent by the referee, if there is one
@@ -16,7 +17,7 @@ use crate::data::world::{Ball, Team, TeamColor, World};
 fn ball_moved_from_designated_pos(designated_position: &Point2<f64>, ball_opt: &Option<Ball>) -> bool {
     return if let Some(ball) = &ball_opt {
         let dist = distance(&ball.position.xy(), &designated_position.xy());
-        dist >= 0.05
+        dist >= 0.15
     } else {
         false
     }
@@ -164,10 +165,11 @@ impl GameStateBranch for StopStateBranch {
                     RefereeCommand::PrepareKickoff(for_team) => {
                         return GameState::Stopped(StoppedState::PrepareKickoff(for_team))
                     }
+                    RefereeCommand::DirectFree(for_team) => return GameState::Stopped(StoppedState::PrepareFreekick(for_team)),
                     _ => return GameState::Stopped(StoppedState::PrepareForGameStart)
                 }
             }
-            None => {  }
+            None => { }
         }
 
         // otherwise, it might be because of an event that occurred
@@ -349,6 +351,20 @@ impl GameStateBranch for NormalStartStateBranch {
                     warn!("Referee did not provide time remaining for penalty");
                     *time_based_refresh = true;
                     GameState::Running(RunningState::Penalty(of_team))
+                }
+            }
+            RefereeCommand::DirectFree(for_team) => {
+                *time_based_refresh = true;
+                if let Some(time_remaining) = referee.current_action_time_remaining {
+                    // If 10 seconds haven't passed
+                    if !time_remaining.num_seconds() <= -1 {
+                        GameState::Running(RunningState::Run)
+                    } else {
+                        GameState::Running(RunningState::FreeKick(for_team))
+                    }
+                } else {
+                    error!("Referee did not provide time remaining for free kick");
+                    GameState::Running(RunningState::FreeKick(for_team))
                 }
             }
             _ => GameState::Running(RunningState::Run)
