@@ -40,14 +40,14 @@ pub fn shoot(
         Ok(_) => true,
         Err(_) => false,
     };
-
-    if shooting_trajectory_will_score && dot_with_ball > 0.95 && dist_to_ball < 0.5 {
+    let fast = dist_to_ball < 0.5;
+    if shooting_trajectory_will_score && dot_with_ball > 0.95  {
         let kick: Option<Kick> = if dist_to_ball < (world.geometry.robot_radius + world.geometry.ball_radius ) {
             Some(Kick::StraightKick {  power: 7. }) 
         }else {None};
         let dir  = (ball_position - robot_position).normalize()*0.4;
         let target = robot_position + dir;
-        return MoveTo::new(target, vectors::angle_to_point(robot_position,*target_shooting_position), 400.,  true, kick, false, false);
+        return MoveTo::new(target, vectors::angle_to_point(robot_position,*target_shooting_position), 400.,  true, kick, fast, false);
     }
-    MoveTo::new(behind_ball_position, vectors::angle_to_point(robot_position, *target_shooting_position), 0., false, None, true, true)
+    MoveTo::new(behind_ball_position, vectors::angle_to_point(robot_position, *target_shooting_position), 0., false, None, fast, true)
 }

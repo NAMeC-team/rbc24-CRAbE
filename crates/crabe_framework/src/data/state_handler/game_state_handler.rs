@@ -17,7 +17,7 @@ use crate::data::world::game_state::RunningState::Run;
 fn ball_moved_from_designated_pos(designated_position: &Point2<f64>, ball_opt: &Option<Ball>) -> bool {
     return if let Some(ball) = &ball_opt {
         let dist = distance(&ball.position.xy(), &designated_position.xy());
-        dist >= 0.15
+        dist >= 1.
     } else {
         false
     }
