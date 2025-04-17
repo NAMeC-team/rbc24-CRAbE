@@ -105,6 +105,10 @@ impl GameControllerPostFilter {
 
             dbg!(&new_state);
 
+            if let Some(des_pos) = referee.designated_position {
+                self.state_data.last_designated_pos = Some(des_pos);
+            }
+
             self.update_team_scores(referee);
             world.data.ref_orders.update(new_state, referee);
         }
