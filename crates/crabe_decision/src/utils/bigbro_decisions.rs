@@ -161,6 +161,16 @@ fn put_attacker(bigbro: &mut BigBro, world: &World, bots: &Vec<&Robot<AllyInfo>>
     return closest_bot.id;
 }   
 
+pub fn ball_placement_state(bigbro: &mut BigBro, world: &World){
+    if let Some(designated_pos) = world.data.ref_orders.designated_position{
+        let ids: Vec<u8> = world.allies_bot.values().map(|bot| bot.id).collect();
+        let strategy = Box::new(strategy::formations::MoveAwayBallPlacement::new(vec![], designated_pos));
+        bigbro.move_bots_to_new_strategy(ids, strategy);
+    }else{
+        everyone_stop(bigbro, world);
+    }
+}
+
 /// Run the strategy for the running state with 5 line robots.
 fn run_state_line_robots(bigbro: &mut BigBro, allies: Vec<&Robot<AllyInfo>>, ball: &Ball, world: &World, _tools_data: &mut ToolData) {
     if allies.len() == 0{return;}
